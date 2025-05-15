@@ -76,6 +76,7 @@ import {
 } from "../../../common/events.ts";
 import { skipIfDuplicated } from "octagonal-wheels/concurrency/lock";
 import { JournalSyncMinio } from "../../../lib/src/replication/journal/objectstore/JournalSyncMinio.ts";
+import { JournalSyncCos } from "../../../lib/src/replication/journal/objectstore/JournalSyncCos.ts";
 import { ICHeader, ICXHeader, PSCHeader } from "../../../common/types.ts";
 import { HiddenFileSync } from "../../../features/HiddenFileSync/CmdHiddenFileSync.ts";
 import { EVENT_REQUEST_SHOW_HISTORY } from "../../../common/obsidianEvents.ts";
@@ -122,10 +123,10 @@ function getLevelStr(level: ConfigLevel) {
     return level == LEVEL_POWER_USER
         ? $msg("obsidianLiveSyncSettingTab.levelPowerUser")
         : level == LEVEL_ADVANCED
-          ? $msg("obsidianLiveSyncSettingTab.levelAdvanced")
-          : level == LEVEL_EDGE_CASE
-            ? $msg("obsidianLiveSyncSettingTab.levelEdgeCase")
-            : "";
+            ? $msg("obsidianLiveSyncSettingTab.levelAdvanced")
+            : level == LEVEL_EDGE_CASE
+                ? $msg("obsidianLiveSyncSettingTab.levelEdgeCase")
+                : "";
 }
 
 export function findAttrFromParent(el: HTMLElement, attr: string): string {
@@ -304,8 +305,8 @@ export class ObsidianLiveSyncSettingTab extends PluginSettingTab {
         const syncMode = this.editingSettings?.liveSync
             ? "LIVESYNC"
             : this.editingSettings?.periodicReplication
-              ? "PERIODIC"
-              : "ONEVENTS";
+                ? "PERIODIC"
+                : "ONEVENTS";
         return {
             syncMode,
         };
@@ -397,6 +398,11 @@ export class ObsidianLiveSyncSettingTab extends PluginSettingTab {
         }
     }
 
+    /**
+     * Closes the plugin settings dialog.
+     * Uses the Obsidian internal API to close the current settings tab.
+     * @internal
+     */
     closeSetting() {
         // @ts-ignore
         this.plugin.app.setting.close();
@@ -1569,7 +1575,7 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                 void addPanel(
                     paneEl,
                     $msg("obsidianLiveSyncSettingTab.titleNotification"),
-                    () => {},
+                    () => { },
                     onlyOnCouchDB
                 ).then((paneEl) => {
                     paneEl.addClass("wizardHidden");
@@ -1762,16 +1768,16 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                     const options: Record<string, string> =
                         this.editingSettings.remoteType == REMOTE_COUCHDB
                             ? {
-                                  NONE: "",
-                                  LIVESYNC: $msg("obsidianLiveSyncSettingTab.optionLiveSync"),
-                                  PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicWithBatch"),
-                                  DISABLE: $msg("obsidianLiveSyncSettingTab.optionDisableAllAutomatic"),
-                              }
+                                NONE: "",
+                                LIVESYNC: $msg("obsidianLiveSyncSettingTab.optionLiveSync"),
+                                PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicWithBatch"),
+                                DISABLE: $msg("obsidianLiveSyncSettingTab.optionDisableAllAutomatic"),
+                            }
                             : {
-                                  NONE: "",
-                                  PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicWithBatch"),
-                                  DISABLE: $msg("obsidianLiveSyncSettingTab.optionDisableAllAutomatic"),
-                              };
+                                NONE: "",
+                                PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicWithBatch"),
+                                DISABLE: $msg("obsidianLiveSyncSettingTab.optionDisableAllAutomatic"),
+                            };
 
                     new Setting(paneEl)
                         .autoWireDropDown("preset", {
@@ -1881,14 +1887,14 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                     const optionsSyncMode =
                         this.editingSettings.remoteType == REMOTE_COUCHDB
                             ? {
-                                  ONEVENTS: $msg("obsidianLiveSyncSettingTab.optionOnEvents"),
-                                  PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicAndEvents"),
-                                  LIVESYNC: $msg("obsidianLiveSyncSettingTab.optionLiveSync"),
-                              }
+                                ONEVENTS: $msg("obsidianLiveSyncSettingTab.optionOnEvents"),
+                                PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicAndEvents"),
+                                LIVESYNC: $msg("obsidianLiveSyncSettingTab.optionLiveSync"),
+                            }
                             : {
-                                  ONEVENTS: $msg("obsidianLiveSyncSettingTab.optionOnEvents"),
-                                  PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicAndEvents"),
-                              };
+                                ONEVENTS: $msg("obsidianLiveSyncSettingTab.optionOnEvents"),
+                                PERIODIC: $msg("obsidianLiveSyncSettingTab.optionPeriodicAndEvents"),
+                            };
 
                     new Setting(paneEl)
                         .autoWireDropDown("syncMode", {
@@ -2196,7 +2202,7 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                         text: "Please set device name to identify this device. This name should be unique among your devices. While not configured, we cannot enable this feature.",
                         cls: "op-warn",
                     },
-                    (c) => {},
+                    (c) => { },
                     visibleOnly(() => this.isConfiguredAs("deviceAndVaultName", ""))
                 );
                 this.createEl(
@@ -2206,7 +2212,7 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                         text: "We cannot change the device name while this feature is enabled. Please disable this feature to change the device name.",
                         cls: "op-warn-info",
                     },
-                    (c) => {},
+                    (c) => { },
                     visibleOnly(() => this.isConfiguredAs("usePluginSync", true))
                 );
 
@@ -2311,8 +2317,8 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                             const scheme = pluginConfig.couchDB_URI.startsWith("http:")
                                 ? "(HTTP)"
                                 : pluginConfig.couchDB_URI.startsWith("https:")
-                                  ? "(HTTPS)"
-                                  : "";
+                                    ? "(HTTPS)"
+                                    : "";
                             pluginConfig.couchDB_URI = isCloudantURI(pluginConfig.couchDB_URI)
                                 ? "cloudant"
                                 : `self-hosted${scheme}`;
@@ -2337,8 +2343,8 @@ The pane also can be launched by \`P2P Replicator\` command from the Command Pal
                                 const endpointScheme = pluginConfig.endpoint.startsWith("http:")
                                     ? "(HTTP)"
                                     : pluginConfig.endpoint.startsWith("https:")
-                                      ? "(HTTPS)"
-                                      : "";
+                                        ? "(HTTPS)"
+                                        : "";
                                 pluginConfig.endpoint = `${endpoint.indexOf(".r2.cloudflarestorage.") !== -1 ? "R2" : "self-hosted?"}(${endpointScheme})`;
                             }
                             const obsidianInfo = `Navigator: ${navigator.userAgent}
@@ -2552,10 +2558,10 @@ ${stringifyYaml(pluginConfig)}`;
                                 Logger("Start verifying all files", LOG_LEVEL_NOTICE, "verify");
                                 const files = this.plugin.settings.syncInternalFiles
                                     ? await this.plugin.storageAccess.getFilesIncludeHidden(
-                                          "/",
-                                          undefined,
-                                          ignorePatterns
-                                      )
+                                        "/",
+                                        undefined,
+                                        ignorePatterns
+                                    )
                                     : await this.plugin.storageAccess.getFileNames();
                                 const documents = [] as FilePath[];
 
@@ -3033,7 +3039,7 @@ ${stringifyYaml(pluginConfig)}`;
                     );
             });
 
-            void addPanel(paneEl, "Syncing", () => {}, onlyOnCouchDBOrMinIO).then((paneEl) => {
+            void addPanel(paneEl, "Syncing", () => { }, onlyOnCouchDBOrMinIO).then((paneEl) => {
                 new Setting(paneEl)
                     .setName("Resend")
                     .setDesc("Resend all chunks to the remote.")
@@ -3061,7 +3067,7 @@ ${stringifyYaml(pluginConfig)}`;
                             .setWarning()
                             .setDisabled(false)
                             .onClick(async () => {
-                                await this.getMinioJournalSyncClient().updateCheckPointInfo((info) => ({
+                                await this.getJournalSyncClient().updateCheckPointInfo((info) => ({
                                     ...info,
                                     receivedFiles: new Set(),
                                     knownIDs: new Set(),
@@ -3082,7 +3088,7 @@ ${stringifyYaml(pluginConfig)}`;
                             .setWarning()
                             .setDisabled(false)
                             .onClick(async () => {
-                                await this.getMinioJournalSyncClient().updateCheckPointInfo((info) => ({
+                                await this.getJournalSyncClient().updateCheckPointInfo((info) => ({
                                     ...info,
                                     lastLocalSeq: 0,
                                     sentIDs: new Set(),
@@ -3179,7 +3185,7 @@ ${stringifyYaml(pluginConfig)}`;
                     .addOnUpdate(onlyOnCouchDB);
             });
 
-            void addPanel(paneEl, "Total Overhaul", () => {}, onlyOnCouchDBOrMinIO).then((paneEl) => {
+            void addPanel(paneEl, "Total Overhaul", () => { }, onlyOnCouchDBOrMinIO).then((paneEl) => {
                 new Setting(paneEl)
                     .setName("Rebuild everything")
                     .setDesc("Rebuild local and remote database with local files.")
@@ -3203,7 +3209,7 @@ ${stringifyYaml(pluginConfig)}`;
                             })
                     );
             });
-            void addPanel(paneEl, "Rebuilding Operations (Remote Only)", () => {}, onlyOnCouchDBOrMinIO).then(
+            void addPanel(paneEl, "Rebuilding Operations (Remote Only)", () => { }, onlyOnCouchDBOrMinIO).then(
                 (paneEl) => {
                     new Setting(paneEl)
                         .setName("Perform cleanup")
@@ -3250,7 +3256,7 @@ ${stringifyYaml(pluginConfig)}`;
                                 .setWarning()
                                 .setDisabled(false)
                                 .onClick(async () => {
-                                    await this.getMinioJournalSyncClient().resetCheckpointInfo();
+                                    await this.getJournalSyncClient().resetCheckpointInfo();
                                     Logger(`Journal exchange history has been cleared.`, LOG_LEVEL_NOTICE);
                                 })
                         )
@@ -3265,7 +3271,7 @@ ${stringifyYaml(pluginConfig)}`;
                                 .setWarning()
                                 .setDisabled(false)
                                 .onClick(async () => {
-                                    await this.getMinioJournalSyncClient().resetAllCaches();
+                                    await this.getJournalSyncClient().resetAllCaches();
                                     Logger(`Journal download/upload cache has been cleared.`, LOG_LEVEL_NOTICE);
                                 })
                         )
@@ -3280,7 +3286,7 @@ ${stringifyYaml(pluginConfig)}`;
                                 .setWarning()
                                 .setDisabled(false)
                                 .onClick(async () => {
-                                    await this.getMinioJournalSyncClient().updateCheckPointInfo((info) => ({
+                                    await this.getJournalSyncClient().updateCheckPointInfo((info) => ({
                                         ...info,
                                         receivedFiles: new Set(),
                                         knownIDs: new Set(),
@@ -3376,14 +3382,29 @@ ${stringifyYaml(pluginConfig)}`;
         });
     }
 
-    getMinioJournalSyncClient() {
+    getJournalSyncClient() {
+
         const id = this.plugin.settings.accessKey;
         const key = this.plugin.settings.secretKey;
         const bucket = this.plugin.settings.bucket;
         const region = this.plugin.settings.region;
         const endpoint = this.plugin.settings.endpoint;
         const useCustomRequestHandler = this.plugin.settings.useCustomRequestHandler;
-        return new JournalSyncMinio(
+        // 判断是否是腾讯云COS（匹配myqcloud.com及其子域名）
+        const isQCloudCOS = /(^|\.)myqcloud\.com$/i.test(new URL(endpoint).hostname);
+        if (!isQCloudCOS) {
+            return new JournalSyncMinio(
+                id,
+                key,
+                endpoint,
+                bucket,
+                this.plugin.simpleStore,
+                this.plugin,
+                useCustomRequestHandler,
+                region
+            );
+        }
+        return new JournalSyncCos(
             id,
             key,
             endpoint,
@@ -3392,10 +3413,11 @@ ${stringifyYaml(pluginConfig)}`;
             this.plugin,
             useCustomRequestHandler,
             region
-        );
+        )
+
     }
     async resetRemoteBucket() {
-        const minioJournal = this.getMinioJournalSyncClient();
+        const minioJournal = this.getJournalSyncClient();
         await minioJournal.resetBucket();
     }
 }
